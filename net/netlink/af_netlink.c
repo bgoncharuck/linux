@@ -1013,8 +1013,8 @@ static int netlink_bind(struct socket *sock, struct sockaddr *addr,
 
 	if (nlk->ngroups == 0)
 		groups = 0;
-	else
-		groups &= (1ULL << nlk->ngroups) - 1;
+	else if (nlk->ngroups < 8*sizeof(groups))
+		groups &= (1UL << nlk->ngroups) - 1;
 
 	bound = nlk->bound;
 	if (bound) {
@@ -2307,7 +2307,6 @@ int __netlink_dump_start(struct sock *ssk, struct sk_buff *skb,
 
 	cb = &nlk->cb;
 	memset(cb, 0, sizeof(*cb));
-	cb->start = control->start;
 	cb->dump = control->dump;
 	cb->done = control->done;
 	cb->nlh = nlh;
@@ -2316,8 +2315,8 @@ int __netlink_dump_start(struct sock *ssk, struct sk_buff *skb,
 	cb->min_dump_alloc = control->min_dump_alloc;
 	cb->skb = skb;
 
-	if (cb->start) {
-		ret = cb->start(cb);
+	if (control->start) {
+		ret = control->start(cb);
 		if (ret)
 			goto error_put;
 	}
